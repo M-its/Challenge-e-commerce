@@ -2,12 +2,37 @@ import { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { randomUUID } from 'node:crypto'
 import { knex } from '../database'
+import id from 'zod/v4/locales/id.cjs'
 
 export async function productsRoutes(app: FastifyInstance) {
   app.get('/', async () => {
     const products = await knex('products').select('*')
 
-    return products
+    return { products }
+  })
+
+  app.get('/active', async () => {
+    const products = await knex('products').where({ active: true })
+
+    return { products }
+  })
+
+  app.get('/inative', async () => {
+    const products = await knex('products').where({ active: false })
+
+    return { products }
+  })
+
+  app.get('/:id', async (request) => {
+    const getProductParamsSchema = z.object({
+      id: z.uuid(),
+    })
+
+    const { id } = getProductParamsSchema.parse(request.params)
+
+    const product = await knex('products').where({ id }).first()
+
+    return { product }
   })
 
   app.post('/', async (request, reply) => {
