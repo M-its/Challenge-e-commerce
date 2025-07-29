@@ -3,3 +3,4 @@ db/app.db
 .env
 dist
 *.log
+src/routes/products copy.ts
