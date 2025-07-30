@@ -1,6 +1,8 @@
 node_modules
 db/app.db
+db/test.db
 .env
+.env.test
 dist
 *.log
 src/routes/products copy.ts

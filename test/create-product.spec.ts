@@ -1,17 +1,83 @@
-import { test } from 'vitest'
+import { test, beforeAll, afterAll, describe, expect, beforeEach } from 'vitest'
+import { execSync } from 'node:child_process'
+import request from 'supertest'
+import { app } from '../src/app'
 
-test('User can create a new product', async ({ request, expect }) => {
-  const response = await request.post('/hello', {
-    data: {
-      model: 'Nikon NIKKOR Z 24-70mm f/2.8 S',
-      brand: 'Nikon',
-      type: 'Zoom',
-      focalLength: '24-70mm',
-      maxAperture: 'f/2.8',
-      mount: 'Nikon Z Mount',
-      weight: 805,
-      hasStabilization: true,
-      active: true,
-    },
+describe('Products Routes', () => {
+  beforeAll(async () => {
+    await app.ready()
+  })
+
+  afterAll(async () => {
+    await app.close()
+  })
+
+  beforeEach(() => {
+    execSync('npm run knex migrate:rollback --all')
+    execSync('npm run knex migrate:latest')
+  })
+
+  test('Should be able to create a new product', async () => {
+    await request(app.server)
+      .post('/products')
+      .send({
+        model: 'Canon EF 50mm f/1.8 STM',
+        brand: 'Canon',
+        type: 'Prime Lens',
+        focalLength: '50mm',
+        maxAperture: 'f/1.8',
+        mount: 'EF',
+        weight: 160,
+        hasStabilization: false,
+        active: true,
+      })
+      .expect(201)
+  })
+
+  test('Should be able to list all products', async () => {
+    await request(app.server).get('/products').expect(200)
+  })
+
+  test('Should be able to list a specific product', async () => {
+    await request(app.server)
+      .post('/products')
+      .send({
+        model: 'Canon EF 50mm f/1.8 STM',
+        brand: 'Canon',
+        type: 'prime',
+        focalLength: '50mm',
+        maxAperture: 'f/1.8',
+        mount: 'EF',
+        weight: 160,
+        hasStabilization: false,
+        active: true,
+      })
+      .expect(201)
+
+    const listProductsResponse = await request(app.server)
+      .get('/products')
+      .expect(200)
+
+    const { products } = listProductsResponse.body.products
+    const productId = products[0].id
+
+    const getProductResponse = await request(app.server)
+      .get(`/products/${productId}`)
+      .expect(200)
+
+    expect(getProductResponse.body.product).toEqual(
+      expect.objectContaining({
+        id: productId,
+        model: 'Canon EF 50mm f/1.8 STM',
+        brand: 'Canon',
+        type: 'prime',
+        focalLength: '50mm',
+        maxAperture: 'f/1.8',
+        mount: 'EF',
+        weight: 160,
+        hasStabilization: false,
+        active: true,
+      })
+    )
   })
 })

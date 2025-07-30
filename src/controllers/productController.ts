@@ -62,8 +62,15 @@ export const productIdParamSchema = z.object({
   id: z.uuid(),
 })
 
+const paginationQuerySchema = z.object({
+  page: z.string().optional().transform(Number).default(1),
+  limit: z.string().optional().transform(Number).default(10),
+})
+
 export async function listAll(request: FastifyRequest, reply: FastifyReply) {
-  const products = await service.getAllProducts()
+  const { page, limit } = paginationQuerySchema.parse(request.query)
+
+  const products = await service.getAllProducts(page, limit)
   return reply.send({ products })
 }
 

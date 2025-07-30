@@ -1,20 +1,93 @@
 import { knex } from '../database'
 import { randomUUID } from 'node:crypto'
 
-export async function getAllProducts() {
-  return knex('products').select('*')
+type Product = {
+  id: string
+  model: string
+  brand: string
+  type: string
+  focalLength: string
+  maxAperture: string
+  mount: string
+  weight: number
+  hasStabilization: boolean
+  active: boolean
 }
 
-export async function getActiveProducts() {
-  return knex('products').where({ active: true })
+function normalizeProduct(product: Product) {
+  return {
+    ...product,
+    active: Boolean(product.active),
+    hasStabilization: Boolean(product.hasStabilization),
+  }
 }
 
-export async function getInactiveProducts() {
-  return knex('products').where({ active: false })
+export async function getAllProducts(page = 1, limit = 10) {
+  const offset = (page - 1) * limit
+
+  const products = await knex('products')
+    .select('*')
+    .limit(limit)
+    .offset(offset)
+
+  const countResult = await knex('products').count<{ count: string }[]>(
+    '* as count'
+  )
+  const total = Number(countResult[0]?.count ?? '0')
+
+  return {
+    products: products.map(normalizeProduct),
+    total,
+    page,
+    limit,
+  }
 }
 
-export async function getProductById(id: string) {
-  return knex('products').where({ id }).first()
+export async function getActiveProducts(page = 1, limit = 10) {
+  const offset = (page - 1) * limit
+
+  const products = await knex('products')
+    .where({ active: true })
+    .limit(limit)
+    .offset(offset)
+
+  const countResult = await knex('products').count<{ count: string }[]>(
+    '* as count'
+  )
+  const total = Number(countResult[0]?.count ?? '0')
+
+  return {
+    products: products.map(normalizeProduct),
+    total,
+    page,
+    limit,
+  }
+}
+
+export async function getInactiveProducts(page = 1, limit = 10) {
+  const offset = (page - 1) * limit
+
+  const products = await knex('products')
+    .where({ active: false })
+    .limit(limit)
+    .offset(offset)
+
+  const countResult = await knex('products').count<{ count: string }[]>(
+    '* as count'
+  )
+  const total = Number(countResult[0]?.count ?? '0')
+
+  return {
+    products: products.map(normalizeProduct),
+    total,
+    page,
+    limit,
+  }
+}
+
+export async function getProductById(id: string): Promise<Product | null> {
+  const product = await knex('products').where({ id }).first()
+  return product ? normalizeProduct(product) : null
 }
 
 export async function createProduct(data: any) {
