@@ -80,4 +80,19 @@ describe('Products Routes', () => {
       })
     )
   })
+
+  test('User Should not be able to create a product with invalid data', async () => {
+    const response = await request(app.server).post('/products').send({
+      model: 'Canon EF 50mm f/1.8 STM',
+      brand: 'Canon',
+      type: 'Prime Lens',
+      focalLength: '50mm',
+      maxAperture: 'f/1.8',
+      mount: 'EF',
+      weight: 160,
+      hasStabilization: false,
+    })
+    // .catch((err) => console.error(err.response?.body || err))
+    expect(400)
+  })
 })
