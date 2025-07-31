@@ -92,7 +92,146 @@ describe('Products Routes', () => {
       weight: 160,
       hasStabilization: false,
     })
-    // .catch((err) => console.error(err.response?.body || err))
     expect(400)
+  })
+
+  test('Should be able to list active products', async () => {
+    await request(app.server)
+      .post('/products')
+      .send({
+        model: 'Canon EF 50mm f/1.8 STM',
+        brand: 'Canon',
+        type: 'Prime Lens',
+        focalLength: '50mm',
+        maxAperture: 'f/1.8',
+        mount: 'EF',
+        weight: 160,
+        hasStabilization: false,
+        active: true,
+      })
+      .expect(201)
+
+    const response = await request(app.server)
+      .get('/products/active')
+      .expect(200)
+    expect(response.body.products)
+  })
+
+  test('Should be able to list inactive products', async () => {
+    await request(app.server)
+      .post('/products')
+      .send({
+        model: 'Canon EF 50mm f/1.8 STM',
+        brand: 'Canon',
+        type: 'Prime Lens',
+        focalLength: '50mm',
+        maxAperture: 'f/1.8',
+        mount: 'EF',
+        weight: 160,
+        hasStabilization: false,
+        active: false,
+      })
+      .expect(201)
+
+    const response = await request(app.server)
+      .get('/products/inactive')
+      .expect(200)
+    expect(response.body.products)
+  })
+
+  test('Should be able to update a product', async () => {
+    await request(app.server)
+      .post('/products')
+      .send({
+        model: 'Canon EF 50mm f/1.8 STM',
+        brand: 'Canon',
+        type: 'Prime Lens',
+        focalLength: '50mm',
+        maxAperture: 'f/1.8',
+        mount: 'EF',
+        weight: 160,
+        hasStabilization: false,
+        active: true,
+      })
+      .expect(201)
+
+    const listProductsResponse = await request(app.server)
+      .get('/products')
+      .expect(200)
+
+    const { products } = listProductsResponse.body.products
+    const product = products[0]
+
+    const updatedProductResponse = await request(app.server)
+      .put(`/products/${product.id}`)
+      .send({
+        type: 'Prime',
+      })
+      .expect(200)
+
+    expect(updatedProductResponse.body.product.type).toBe('Prime')
+  })
+
+  test('Should be able to change the active status of a product', async () => {
+    await request(app.server)
+      .post('/products')
+      .send({
+        model: 'Canon EF 50mm f/1.8 STM',
+        brand: 'Canon',
+        type: 'Prime Lens',
+        focalLength: '50mm',
+        maxAperture: 'f/1.8',
+        mount: 'EF',
+        weight: 160,
+        hasStabilization: false,
+        active: true,
+      })
+      .expect(201)
+
+    const listProductsResponse = await request(app.server)
+      .get('/products')
+      .expect(200)
+
+    const { products } = listProductsResponse.body.products
+    const product = products[0]
+
+    const newStatus = !product.active
+
+    const updateResponse = await request(app.server)
+      .patch(`/products/${product.id}`)
+      .send({
+        active: newStatus,
+      })
+      .expect(200)
+
+    expect(updateResponse.body.product.active).toBe(newStatus)
+  })
+
+  test('Shuld be able to remove a product', async () => {
+    await request(app.server)
+      .post('/products')
+      .send({
+        model: 'Canon EF 50mm f/1.8 STM',
+        brand: 'Canon',
+        type: 'Prime Lens',
+        focalLength: '50mm',
+        maxAperture: 'f/1.8',
+        mount: 'EF',
+        weight: 160,
+        hasStabilization: false,
+        active: true,
+      })
+      .expect(201)
+
+    const listProductsResponse = await request(app.server)
+      .get('/products')
+      .expect(200)
+
+    const { products } = listProductsResponse.body.products
+    const productId = products[0].id
+
+    await request(app.server).delete(`/products/${productId}`).expect(204)
+
+    await request(app.server).get(`/products/${productId}`).expect(404)
   })
 })

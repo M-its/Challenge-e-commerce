@@ -112,7 +112,8 @@ export async function update(
   const product = await service.getProductById(id)
   if (!product) return reply.status(404).send({ message: 'Product not found' })
   await service.updateProduct(id, data)
-  return reply.status(204).send()
+  const updatedProduct = await service.getProductById(id)
+  return reply.status(200).send({ product: updatedProduct })
 }
 
 export async function toggleActive(
@@ -121,9 +122,13 @@ export async function toggleActive(
 ) {
   const { id } = productIdParamSchema.parse(request.params)
   const product = await service.getProductById(id)
+
   if (!product) return reply.status(404).send({ message: 'Product not found' })
+
   await service.toggleProductActive(id, !product.active)
-  return reply.status(204).send()
+
+  const updatedProduct = await service.getProductById(id)
+  return reply.status(200).send({ product: updatedProduct })
 }
 
 export async function remove(
