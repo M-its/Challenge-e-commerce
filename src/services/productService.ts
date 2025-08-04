@@ -90,6 +90,21 @@ export async function getProductById(id: string): Promise<Product | null> {
   return product ? normalizeProduct(product) : null
 }
 
+export async function getProductsByQuery({
+  model,
+  brand,
+}: {
+  model?: string
+  brand?: string
+}) {
+  const query = knex('products')
+
+  if (model) query.whereRaw('LOWER(model) LIKE ?', [`%${model.toLowerCase()}%`])
+  if (brand) query.whereRaw('LOWER(brand) LIKE ?', [`%${brand.toLowerCase()}%`])
+
+  return await query.select('*')
+}
+
 export async function createProduct(data: any) {
   await knex('products').insert({
     id: randomUUID(),

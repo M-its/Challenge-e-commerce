@@ -62,6 +62,11 @@ export const productIdParamSchema = z.object({
   id: z.uuid(),
 })
 
+export const productQuerySchema = z.object({
+  model: z.string().optional(),
+  brand: z.string().optional(),
+})
+
 const paginationQuerySchema = z.object({
   page: z.string().optional().transform(Number).default(1),
   limit: z.string().optional().transform(Number).default(10),
@@ -87,14 +92,19 @@ export async function listInactive(
   return reply.send({ products })
 }
 
-export async function getById(
-  request: FastifyRequest<{ Params: { id: string } }>,
+export async function getByQuery(
+  request: FastifyRequest<{ Querystring: { model?: string; brand?: string } }>,
   reply: FastifyReply
 ) {
-  const { id } = productIdParamSchema.parse(request.params)
-  const product = await service.getProductById(id)
-  if (!product) return reply.status(404).send({ message: 'Product not found' })
-  return reply.send({ product })
+  const query = productQuerySchema.parse(request.query)
+
+  const products = await service.getProductsByQuery(query)
+
+  if (products.length === 0) {
+    return reply.status(404).send({ message: 'No products found' })
+  }
+
+  return reply.send({ products })
 }
 
 export async function create(request: FastifyRequest, reply: FastifyReply) {
