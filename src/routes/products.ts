@@ -6,6 +6,7 @@ export async function productsRoutes(app: FastifyInstance) {
   app.get('/active', controller.listActive)
   app.get('/inactive', controller.listInactive)
   app.get('/search', controller.getByQuery)
+  app.get('/:id', controller.getProductById)
   app.post('/', controller.create)
   app.put('/:id', controller.update)
   app.patch('/:id', controller.toggleActive)

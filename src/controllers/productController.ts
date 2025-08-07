@@ -23,6 +23,11 @@ export const requiredNumber = (fieldName: string) =>
     .int()
     .min(1, { error: `The field ${fieldName} must be at least 1.` })
 
+export const requiredSelectType = (fieldName: string) =>
+  z.string().refine((val) => val !== '', {
+    message: 'Please select a valid lens type.',
+  })
+
 export const requiredBoolean = (fieldName: string) => {
   return z.boolean({
     error: (issue) =>
@@ -36,7 +41,7 @@ export const createProductBodySchema = z
   .object({
     model: requiredString('model'),
     brand: requiredString('brand'),
-    type: requiredString('type'),
+    type: requiredSelectType('type'),
     focalLength: requiredString('focalLength'),
     maxAperture: requiredString('maxAperture'),
     mount: requiredString('mount'),
@@ -69,7 +74,7 @@ export const productQuerySchema = z.object({
 
 const paginationQuerySchema = z.object({
   page: z.string().optional().transform(Number).default(1),
-  limit: z.string().optional().transform(Number).default(10),
+  limit: z.string().optional().transform(Number).default(9),
 })
 
 export async function listAll(request: FastifyRequest, reply: FastifyReply) {
@@ -107,8 +112,25 @@ export async function getByQuery(
   return reply.send({ products })
 }
 
+export async function getProductById(
+  request: FastifyRequest<{ Params: { id: string } }>,
+  reply: FastifyReply
+) {
+  const { id } = productIdParamSchema.parse(request.params)
+  const product = await service.getProductById(id)
+  if (!product) return reply.status(404).send({ message: 'Product not found' })
+
+  return { product }
+}
+
 export async function create(request: FastifyRequest, reply: FastifyReply) {
-  const data = createProductBodySchema.parse(request.body)
+  let data
+  try {
+    data = createProductBodySchema.parse(request.body)
+  } catch (err) {
+    console.error('Erro de validação Zod:', err)
+    return reply.status(400).send({ error: 'Dados inválidos', details: err })
+  }
   await service.createProduct(data)
   return reply.status(201).send({ message: 'Product created successfully' })
 }

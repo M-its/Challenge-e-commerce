@@ -22,7 +22,7 @@ function normalizeProduct(product: Product) {
   }
 }
 
-export async function getAllProducts(page = 1, limit = 10) {
+export async function getAllProducts(page = 1, limit = 9) {
   const offset = (page - 1) * limit
 
   const products = await knex('products')
@@ -43,7 +43,7 @@ export async function getAllProducts(page = 1, limit = 10) {
   }
 }
 
-export async function getActiveProducts(page = 1, limit = 10) {
+export async function getActiveProducts(page = 1, limit = 9) {
   const offset = (page - 1) * limit
 
   const products = await knex('products')
@@ -51,9 +51,9 @@ export async function getActiveProducts(page = 1, limit = 10) {
     .limit(limit)
     .offset(offset)
 
-  const countResult = await knex('products').count<{ count: string }[]>(
-    '* as count'
-  )
+  const countResult = await knex('products')
+    .where({ active: true })
+    .count<{ count: string }[]>('* as count')
   const total = Number(countResult[0]?.count ?? '0')
 
   return {
@@ -64,7 +64,7 @@ export async function getActiveProducts(page = 1, limit = 10) {
   }
 }
 
-export async function getInactiveProducts(page = 1, limit = 10) {
+export async function getInactiveProducts(page = 1, limit = 9) {
   const offset = (page - 1) * limit
 
   const products = await knex('products')
@@ -72,9 +72,9 @@ export async function getInactiveProducts(page = 1, limit = 10) {
     .limit(limit)
     .offset(offset)
 
-  const countResult = await knex('products').count<{ count: string }[]>(
-    '* as count'
-  )
+  const countResult = await knex('products')
+    .where({ active: false })
+    .count<{ count: string }[]>('* as count')
   const total = Number(countResult[0]?.count ?? '0')
 
   return {
