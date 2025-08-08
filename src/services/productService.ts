@@ -106,6 +106,11 @@ export async function getProductsByQuery({
 }
 
 export async function createProduct(data: any) {
+  const existing = await knex('products').where('model', data.model).first()
+  if (existing) {
+    throw new Error('This product model already exists')
+  }
+
   await knex('products').insert({
     id: randomUUID(),
     ...data,

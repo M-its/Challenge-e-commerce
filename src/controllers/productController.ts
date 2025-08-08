@@ -2,6 +2,21 @@ import * as service from '../services/productService'
 import { FastifyRequest, FastifyReply } from 'fastify'
 import { z } from 'zod'
 
+export const productSchema = z.object({
+  id: z.string().uuid(),
+  model: z.string(),
+  brand: z.string(),
+  type: z.string(),
+  focalLength: z.string(),
+  maxAperture: z.string(),
+  mount: z.string(),
+  weight: z.number(),
+  hasStabilization: z.boolean(),
+  active: z.boolean(),
+  created_at: z.string().optional(),
+  updated_at: z.string().optional(),
+})
+
 export const requiredString = (fieldName: string) =>
   z
     .string({
@@ -10,7 +25,7 @@ export const requiredString = (fieldName: string) =>
           ? `The field ${fieldName} is required`
           : `${fieldName} must be a string`,
     })
-    .min(1, { error: `This field ${fieldName} cannot be empty.` })
+    .min(1, { error: `The field ${fieldName} cannot be empty.` })
 
 export const requiredNumber = (fieldName: string) =>
   z
@@ -73,11 +88,12 @@ export const productQuerySchema = z.object({
 })
 
 const paginationQuerySchema = z.object({
-  page: z.string().optional().transform(Number).default(1),
-  limit: z.string().optional().transform(Number).default(9),
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).default(9),
 })
 
 export async function listAll(request: FastifyRequest, reply: FastifyReply) {
+  console.log('request.query', request.query)
   const { page, limit } = paginationQuerySchema.parse(request.query)
 
   const products = await service.getAllProducts(page, limit)
@@ -124,14 +140,16 @@ export async function getProductById(
 }
 
 export async function create(request: FastifyRequest, reply: FastifyReply) {
-  let data
+  let data = createProductBodySchema.parse(request.body)
+
   try {
-    data = createProductBodySchema.parse(request.body)
+    await service.createProduct(data)
   } catch (err) {
-    console.error('Erro de validação Zod:', err)
-    return reply.status(400).send({ error: 'Dados inválidos', details: err })
+    return reply
+      .status(409)
+      .send({ err: 'A product with this model already exists' })
   }
-  await service.createProduct(data)
+
   return reply.status(201).send({ message: 'Product created successfully' })
 }
 
@@ -145,6 +163,7 @@ export async function update(
   if (!product) return reply.status(404).send({ message: 'Product not found' })
   await service.updateProduct(id, data)
   const updatedProduct = await service.getProductById(id)
+
   return reply.status(200).send({ product: updatedProduct })
 }
 

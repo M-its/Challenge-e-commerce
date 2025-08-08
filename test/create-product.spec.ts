@@ -207,7 +207,7 @@ describe('Products Routes', () => {
     expect(updateResponse.body.product.active).toBe(newStatus)
   })
 
-  test('Shuld be able to remove a product', async () => {
+  test('Should be able to remove a product', async () => {
     await request(app.server)
       .post('/products')
       .send({
